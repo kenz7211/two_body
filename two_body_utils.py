@@ -1,5 +1,5 @@
 """
-Constants, Parameters, and Functions used in two_body.ipynb 
+Constants, Variables, and Functions used in two_body.ipynb 
 """
 from __future__ import print_function, division
 import numpy as np
@@ -10,6 +10,10 @@ import astropy.constants as const
 from astropy.table import Table
 from datetime import datetime
 
+
+"""
+Constants and Variables
+"""
 # Number of time intervals in array
 n_int = 10
 
@@ -31,7 +35,7 @@ distance_km= distance_kpc.to(u.km)
 M = 0.75
 
 # m2m1 is the ratio of secondary to primary masses
-m2m1 = 1/8200
+m2m1 = m_secondary/m_primary
 
 # tau is time of periapsis (days)
 tau = 0.0
@@ -39,28 +43,44 @@ tau = 0.0
 # mtot is the total mass of the system in solar masses
 mtot = 8200*M_SUN
 
-# per is period in s
-per = 1
+# semi_major_sample is a sample semi-major axis relative to COM in kilometers
+# sample uses the two highest velocity omega centauri stars
+# using average angular distance from central mass between the two stars
+# apporximately 0.5" at a cluster distance 5.43kpc
+angular_distance_rad = (0.5*u.mas).to(u.rad).value
+semi_major_sample = angular_distance_rad*distance_km
+
+# semi_major_primary is the semi major axis of M_secondary's orbit in kilometers
+semi_major_primary = 0*u.km
+# a_secondary is the semi-major axis of M_secondary's orbit in kilometers
+semi_major_secondary = 1*u.km
+
+# v_xyz_sample is a sample 3D velocity relative to the COM in meters per second
+# sample uses the two highest velocity omega centauri stars
+# using average proper motion from central mass between the two stars
+# apporximately 100 km/s at a cluster distance 5.43kpc
+v_xyz_sample = 100*u.km/u.s
 
 # Omega is the longitude of the ascending node in degrees
-Omega = 0
+Omega = 70
 
 # w is the argument of periapsis in degrees
 # (where the orbiting body crosses the reference plane going north, and the periapsis)
-w = 0
+w = 30
 
-# i is the orbital inclination
-i = 0
+# i is the orbital inclination in degrees
+i = 50
 
 #nu is the true annomaly
 nu = None
 
-# a is the semi-major axis relative to COM in km
-a = 1
-# a_primary is the semi-major axis of m_primary's orbit
-a_primary = 0
-# a_secondary is the semi-major axis of M_secondary's orbit
-a_secondary = 1
+
+"""
+Variables better  defined in two_body.ipynb
+"""
+
+# per_sample is a sample period in s
+# per_sample = circular_period(semi_major = semi_major_sample, speed = v_xyz_sample)
 
 # e is eccentricity
 # 100 random eccentricities from the thermal distribution 
@@ -72,8 +92,15 @@ p = np.random.uniform(0, 1, n_int)
 e = np.sqrt(p)
 
 
+
+
+
+"""
+Collection of Utilities
+"""
+
 # E is the eccentric annomaly of the orbit
-def eccentric_annomaly(M = M, e = e):
+def eccentric_annomaly(M = M, e=e):
     """
     Uses solver for Kepler's Equation for a set
     of mean anomaly and eccentricity.
@@ -83,7 +110,7 @@ def eccentric_annomaly(M = M, e = e):
     return E
 
 
-# XY acceleration of m_secondary
+# XY acceleration of m_secondary in km/s^2
 def xy_orbital_acceleration_secondary(m_primary = m_primary, rd = None, i = i):
     """
     Compute the component of orbital acceleration in the plane of the sky (xy)
@@ -128,14 +155,14 @@ def true_anomaly(E, e):
     return nu
 
 # Distance from center of mass
-def com_radius(a=a, e=e, nu=nu):
+def com_radius(a=semi_major_secondary, e=e, nu=nu):
     """
     Compute the relative distance of a body from the center of mass in a Keplerian orbit.
 
     Parameters
     ----------
     a : float
-        Semi-major axis of the orbit [same units as output].
+        Semi-major axis of the orbit [same units as output = m].
     e : float
         Orbital eccentricity (0 <= e < 1).
     nu : float
@@ -149,7 +176,7 @@ def com_radius(a=a, e=e, nu=nu):
     return a * (1 - e**2) / (1 + e * np.cos(nu))
 
 # Distance between orbiting bodies
-def relative_distance(a_primary=a_primary, a_secondary=a_secondary, e=e, nu=nu):
+def relative_distance(a_primary=semi_major_primary, a_secondary=semi_major_secondary, nu=nu, e=e):
     """
     Compute the relative distance between two orbiting bodies at a given true anomaly.
 
@@ -212,6 +239,19 @@ def masyr2_to_kms2(a_masyr2=None, distance_km=distance_km):
 
     return a_kms2
 
+# Calculate the period of a circular  orbit in seconds
+def circular_period(semi_major, speed):
+    """
+    Calculate the orbital period in seconds.
+    
+    Parameters:
+        semi_major (float): semi major axis (kilometers)
+        speed (float): Orbital speed (km/s)
 
+    Returns:
+         Orbital period (seconds)
+    """
+    circ = 2 * np.pi * semi_major
+    return circ/speed
 
 
