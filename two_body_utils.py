@@ -47,7 +47,7 @@ mtot = 8200*M_SUN
 # sample uses the two highest velocity omega centauri stars
 # using average angular distance from central mass between the two stars
 # apporximately 0.5" at a cluster distance 5.43kpc
-angular_distance_rad = (0.5*u.mas).to(u.rad).value
+angular_distance_rad = (0.5*u.rad).value
 semi_major_sample = angular_distance_rad*distance_km
 
 # semi_major_primary is the semi major axis of M_secondary's orbit in kilometers
