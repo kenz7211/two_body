@@ -23,9 +23,9 @@ G = 6.67430e-11
 # Solar Mass
 M_SUN = 1.989e30 
 
-# Masses of orbiting bodies
-m_primary = 8200*M_SUN
-m_secondary = M_SUN
+# Masses of orbiting bodies in solar masses
+m_primary = 20000
+m_secondary = 1
 
 # Distance to Omega Centauri center (km)
 distance_kpc = 5.43 * u.kpc
@@ -41,13 +41,13 @@ m2m1 = m_secondary/m_primary
 tau = 0.0
 
 # mtot is the total mass of the system in solar masses
-mtot = 8200*M_SUN
+mtot = m_primary 
 
 # semi_major_sample is a sample semi-major axis relative to COM in kilometers
 # sample uses the two highest velocity omega centauri stars
 # using average angular distance from central mass between the two stars
 # apporximately 0.5" at a cluster distance 5.43kpc
-angular_distance_rad = (0.5*u.rad).value
+angular_distance_rad = (0.5*u.arcsec).to(u.rad).value
 semi_major_sample = angular_distance_rad*distance_km
 
 # semi_major_primary is the semi major axis of M_secondary's orbit in kilometers
