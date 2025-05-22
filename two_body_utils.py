@@ -24,7 +24,7 @@ G = 6.67430e-11
 M_SUN = 1.989e30 
 
 # Masses of orbiting bodies in solar masses
-m_primary = 20000
+m_primary = 8200
 m_secondary = 1
 
 # Distance to Omega Centauri center (km)
@@ -50,6 +50,8 @@ mtot = m_primary
 angular_distance_rad = (0.5*u.arcsec).to(u.rad).value
 semi_major_sample = angular_distance_rad*distance_km
 
+# semi major axis used in IMBH_av_plots
+a_IMBH_av_plots = (0.048*u.pc).to(u.km)
 # semi_major_primary is the semi major axis of M_secondary's orbit in kilometers
 semi_major_primary = 0*u.km
 # a_secondary is the semi-major axis of M_secondary's orbit in kilometers
@@ -69,7 +71,7 @@ Omega = 70
 w = 30
 
 # i is the orbital inclination in degrees
-i = 50
+i = 0
 
 #nu is the true annomaly
 nu = None
@@ -126,7 +128,7 @@ def xy_orbital_acceleration_secondary(m_primary = m_primary, rd = None, i = i):
     """
     
     # xyz acceleration vector
-    a_xyz_secondary = G * m_primary / rd**2
+    a_xyz_secondary = G * m_primary*M_SUN / rd**2
 
     # x,y components
     a_xy_secondary = a_xyz_secondary*np.cos(i)
