@@ -112,7 +112,7 @@ def eccentric_annomaly(M = M, e=e):
     return E
 
 
-# XY acceleration of m_secondary in km/s^2
+# XY acceleration of m_secondary in km/s^2 (input rd in meters!!!)
 def xy_orbital_acceleration_secondary(m_primary = m_primary, rd = None, i = i):
     """
     Compute the component of orbital acceleration in the plane of the sky (xy)
@@ -138,26 +138,18 @@ def xy_orbital_acceleration_secondary(m_primary = m_primary, rd = None, i = i):
     
     return a_xy_secondary
 
-# True anomaly
+# True anomaly 
 def true_anomaly(E, e):
     """
-    Calculate the true anomaly (nu) from eccentric anomaly and eccentricity
-    using the true anomaly formula.
-
-    Parameters:
-    E = Eccentric anomaly in radians
-    e = Eccentricity (0 <= e < 1)
-
-    Returns:
-        nu = true anomaly in radians
+    Calculate the true anomaly (nu) from eccentric anomaly E and eccentricity e.
     """
+    sin_nu = (np.sqrt(1 - e**2) * np.sin(E)) / (1 - e * np.cos(E))
     cos_nu = (np.cos(E) - e) / (1 - e * np.cos(E))
-    nu = np.arccos(cos_nu)
-
-    return nu
+    nu = np.arctan2(sin_nu, cos_nu)
+    return np.mod(nu, 2*np.pi)  # convert to [0, 2pi)
 
 # Distance from center of mass
-def com_radius(a=semi_major_secondary, e=e, nu=nu):
+def com_radius(a=semi_major_sample, e=e, nu=nu):
     """
     Compute the relative distance of a body from the center of mass in a Keplerian orbit.
 
@@ -173,12 +165,12 @@ def com_radius(a=semi_major_secondary, e=e, nu=nu):
     Returns
     -------
     float
-        Distance from the center of mass to the orbiting body at true anomaly
+        Distance from the center of mass to the orbiting body at true anomaly in same units as a
     """
     return a * (1 - e**2) / (1 + e * np.cos(nu))
 
 # Distance between orbiting bodies
-def relative_distance(a_primary=semi_major_primary, a_secondary=semi_major_secondary, nu=nu, e=e):
+def relative_distance(a_primary=semi_major_primary, a_secondary=semi_major_sample, nu=nu, e=e):
     """
     Compute the relative distance between two orbiting bodies at a given true anomaly.
 
@@ -200,13 +192,11 @@ def relative_distance(a_primary=semi_major_primary, a_secondary=semi_major_secon
     float
         Distance between the two bodies at true anomaly `nu`.
     """
-    r_primary = com_radius(a_primary, e, nu)
-    r_secondary = com_radius(a_secondary, e, nu)
 
-    x_primary = r_primary * np.cos(nu)
-    y_primary = r_primary * np.sin(nu)
-    x_secondary = r_secondary * np.cos(nu)
-    y_secondary = r_secondary * np.sin(nu)
+    x_primary = a_primary * np.cos(nu)
+    y_primary = a_primary * np.sin(nu)
+    x_secondary = a_secondary * np.cos(nu)
+    y_secondary = a_secondary * np.sin(nu)
 
     return np.sqrt((x_primary - x_secondary)**2 + (y_primary - y_secondary)**2)
 
