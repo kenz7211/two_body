@@ -17,11 +17,8 @@ Constants and Variables
 # Number of time intervals in array
 n_int = 10
 
-# Gravitational Constant
-G = 6.67430e-11
-
 # Solar Mass
-M_SUN = 1.989e30 
+M_SUN = const.M_sun.to(u.kg)
 
 # Masses of orbiting bodies in solar masses
 m_primary = 8200
@@ -43,19 +40,19 @@ tau = 0.0
 # mtot is the total mass of the system in solar masses
 mtot = m_primary 
 
-# semi_major_sample is a sample semi-major axis relative to COM in kilometers
+# semi_major_sample (In km!!!!) is a sample semi-major axis relative to COM in kilometers
 # sample uses the two highest velocity omega centauri stars
 # using average angular distance from central mass between the two stars
 # apporximately 0.5" at a cluster distance 5.43kpc
 angular_distance_rad = (0.5*u.arcsec).to(u.rad).value
 semi_major_sample = angular_distance_rad*distance_km
 
-# semi major axis used in IMBH_av_plots
+# semi major axis used in IMBH_av_plots in kilometers
 a_IMBH_av_plots = (0.048*u.pc).to(u.km)
 # semi_major_primary is the semi major axis of M_secondary's orbit in kilometers
 semi_major_primary = 0*u.km
 # a_secondary is the semi-major axis of M_secondary's orbit in kilometers
-semi_major_secondary = 1*u.km
+semi_major_secondary = semi_major_sample
 
 # v_xyz_sample is a sample 3D velocity relative to the COM in meters per second
 # sample uses the two highest velocity omega centauri stars
@@ -64,16 +61,19 @@ semi_major_secondary = 1*u.km
 v_xyz_sample = 100*u.km/u.s
 
 # Omega is the longitude of the ascending node in degrees
-Omega = 70
+# Describes the angle between the reference direction (usually the vernal equinox) and the ascending node of the orbit
+# plane of sky components are best approximated using magnitude*cos(i) when Omega = 0
+Omega = 0
 
 # w is the argument of periapsis in degrees
-# (where the orbiting body crosses the reference plane going north, and the periapsis)
-w = 30
+# (between where the orbiting body crosses the reference plane going north, and the periapsis)
+# plane of sky components are best approximated using magnitude*cos(i) when w = 0
+w = 90
 
 # i is the orbital inclination in degrees
 i = 0
 
-#nu is the true annomaly
+# nu is the true annomaly
 nu = None
 
 
@@ -128,7 +128,7 @@ def xy_orbital_acceleration_secondary(m_primary = m_primary, rd = None, i = i):
     """
     
     # xyz acceleration vector
-    a_xyz_secondary = G * m_primary*M_SUN / rd**2
+    a_xyz_secondary = const.G * m_primary*M_SUN / rd**2
 
     # x,y components
     a_xy_secondary = a_xyz_secondary*np.cos(i)
@@ -169,12 +169,11 @@ def com_radius(a=semi_major_sample, e=e, nu=nu):
     """
     return a * (1 - e**2) / (1 + e * np.cos(nu))
 
-# Distance between orbiting bodies
-def relative_distance(a_primary=semi_major_primary, a_secondary=semi_major_sample, nu=nu, e=e):
+# DIstance between two orbiting bodies at a given true anomaly
+def relative_distance(a_primary, a_secondary, e, nu):
     """
-    Compute the relative distance between two orbiting bodies at a given true anomaly.
-
-    Assumes both bodies share the same eccentricity and true anomaly, but have different semi-major axes.
+    Compute the distance between two orbiting bodies at a given true anomaly,
+    using the com_radius function to get their individual distances from the center of mass.
 
     Parameters
     ----------
@@ -192,13 +191,10 @@ def relative_distance(a_primary=semi_major_primary, a_secondary=semi_major_sampl
     float
         Distance between the two bodies at true anomaly `nu`.
     """
-
-    x_primary = a_primary * np.cos(nu)
-    y_primary = a_primary * np.sin(nu)
-    x_secondary = a_secondary * np.cos(nu)
-    y_secondary = a_secondary * np.sin(nu)
-
-    return np.sqrt((x_primary - x_secondary)**2 + (y_primary - y_secondary)**2)
+    r1 = com_radius(a_primary, e, nu)
+    r2 = com_radius(a_secondary, e, nu)
+    
+    return np.abs(r1 - r2)
 
 # Convert angular accelerration to linear acceleration
 def masyr2_to_kms2(a_masyr2=None, distance_km=distance_km):
@@ -245,5 +241,77 @@ def circular_period(semi_major, speed):
     """
     circ = 2 * np.pi * semi_major
     return circ/speed
+
+# Orbital velocity of orbiting mody using vis-viva equation 
+def orbital_speed(a, e, nu, m_primary=m_primary*M_SUN):
+    """
+    Calculate orbital velocity magnitude at a given true anomaly using the vis-viva equation.
+
+    Parameters
+    ----------
+    a : float
+        Semi-major axis of orbiting body[m]
+    e : float
+        Orbital eccentricity
+    nu : float
+        True anomaly [radians]
+    m_primary : float
+        Mass of the central body [kg]
+
+    Returns
+    -------
+    float
+        Orbital velocity [m/s]
+    """
+    # Gravitational parameter μ = G * M
+    mu = const.G * m_primary
+
+    # Radial distance at true anomaly nu
+    r = com_radius(a, e, nu)
+
+    # Vis-viva equation
+    v = np.sqrt(mu * (2 / r - 1 / a))
+
+    return v
+
+# Convert true anomaly to time since periastron (τ)
+def true_anomaly_to_time(nu, e, a, m_primary=m_primary*M_SUN):
+    """
+    Convert true anomaly to time since periastron/periapsis (tau) for a Keplerian orbit.
+    Assume tau is zero.
+
+    Parameters
+    ----------
+    nu : float or array-like
+        True anomaly [radians]
+    e : float
+        Orbital eccentricity (0 <= e < 1)
+    a : float
+        Semi-major axis [meters]
+    m_primary : float
+        Mass of the central body [kg], default is solar mass
+
+    Returns
+    -------
+    t : Time since periastron passage [seconds]
+    """
+
+    # Compute eccentric anomaly E from true anomaly ν
+    E = 2 * np.arctan(np.sqrt((1 - e)/(1 + e)) * np.tan(nu / 2))
+
+    # Ensure E is between 0 and 2π
+    E = np.mod(E, 2 * np.pi)
+
+    # Compute mean anomaly M from eccentric anomaly
+    M = E - e * np.sin(E)
+
+    # Compute mean motion n (rad/s)
+    mu = const.G * m_primary  # Gravitational parameter [m³/s²]
+    n = np.sqrt(mu / a**3)    # Mean motion
+
+    # Step 4: Compute time since periastron
+    t = M / n  # Time since tau [seconds]
+
+    return t
 
 
