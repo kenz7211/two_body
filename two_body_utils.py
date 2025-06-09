@@ -173,7 +173,8 @@ def com_radius(a=semi_major_sample, e=e, nu=nu):
 def relative_distance(a_primary, a_secondary, e, nu):
     """
     Compute the distance between two orbiting bodies at a given true anomaly,
-    using the com_radius function to get their individual distances from the center of mass.
+    using the com_radius function to get their individual distances from the center of mass. 
+    Inputs must be meters!!!
 
     Parameters
     ----------
@@ -189,7 +190,7 @@ def relative_distance(a_primary, a_secondary, e, nu):
     Returns
     -------
     float
-        Distance between the two bodies at true anomaly `nu`.
+        Distance between the two bodies at true anomaly `nu` in meters.
     """
     r1 = com_radius(a_primary, e, nu)
     r2 = com_radius(a_secondary, e, nu)
