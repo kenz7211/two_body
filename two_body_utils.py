@@ -15,7 +15,7 @@ from datetime import datetime
 Constants and Variables
 """
 # Number of time intervals in array
-n_int = 10
+n_int = 50
 
 # Solar Mass
 M_SUN = const.M_sun.to(u.kg)
@@ -68,7 +68,7 @@ Omega = 0
 # w is the argument of periapsis in degrees
 # (between where the orbiting body crosses the reference plane going north, and the periapsis)
 # plane of sky components are best approximated using magnitude*cos(i) when w = 0
-w = 90
+w = 0
 
 # i is the orbital inclination in degrees
 i = 0
