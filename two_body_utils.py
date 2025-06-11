@@ -101,7 +101,6 @@ e = np.sqrt(p)
 Collection of Utilities
 """
 
-# E is the eccentric annomaly of the orbit
 def eccentric_annomaly(M = M, e=e):
     """
     Uses solver for Kepler's Equation for a set
@@ -112,23 +111,22 @@ def eccentric_annomaly(M = M, e=e):
     return E
 
 
-# XY acceleration of m_secondary in km/s^2 (input rd in meters!!!)
 def xy_orbital_acceleration_secondary(m_primary = m_primary, rd = None, i = i):
     """
     Compute the component of orbital acceleration in the plane of the sky (xy)
     using Newton's law of gravitation 
 
     Parameters:
-        m_primary = mass of primary body (kg)
-        rd = relative distance between the two bodies (m)
-        i = orbital inclination of the binary relative to xy (rad)
+        m_primary: mass of primary body (kg)
+        rd: relative distance between the two bodies (m)
+        i: orbital inclination of the binary relative to xy (rad)
 
     Returns:
-        a_xy_secondary = The magnitudes (km/s²) of the XY acceleration as an array
+        The magnitudes (km/s²) of the XY acceleration as an array
     """
     
     # xyz acceleration vector
-    a_xyz_secondary = const.G * m_primary*M_SUN / rd**2
+    a_xyz_secondary = const.G * m_primary*M_SUN / rd.to(u.m)**2
 
     # x,y components
     a_xy_secondary = a_xyz_secondary*np.cos(i)
@@ -138,7 +136,7 @@ def xy_orbital_acceleration_secondary(m_primary = m_primary, rd = None, i = i):
     
     return a_xy_secondary
 
-# True anomaly 
+
 def true_anomaly(E, e):
     """
     Calculate the true anomaly (nu) from eccentric anomaly E and eccentricity e.
@@ -148,28 +146,24 @@ def true_anomaly(E, e):
     nu = np.arctan2(sin_nu, cos_nu)
     return np.mod(nu, 2*np.pi)  # convert to [0, 2pi)
 
-# Distance from center of mass
+
 def com_radius(a=semi_major_sample, e=e, nu=nu):
     """
     Compute the relative distance of a body from the center of mass in a Keplerian orbit.
 
     Parameters
     ----------
-    a : float
-        Semi-major axis of the orbit [same units as output = m].
-    e : float
-        Orbital eccentricity (0 <= e < 1).
-    nu : float
-        True anomaly in radians.
+    a : Semi-major axis of the orbit [same units as output = m].
+    e : Orbital eccentricity (0 <= e < 1).
+    nu : True anomaly in radians.
 
     Returns
     -------
-    float
-        Distance from the center of mass to the orbiting body at true anomaly in same units as a
+    Distance from the center of mass to the orbiting body at true anomaly in same units as a
     """
     return a * (1 - e**2) / (1 + e * np.cos(nu))
 
-# DIstance between two orbiting bodies at a given true anomaly
+
 def relative_distance(a_primary, a_secondary, e, nu):
     """
     Compute the distance between two orbiting bodies at a given true anomaly,
@@ -178,26 +172,21 @@ def relative_distance(a_primary, a_secondary, e, nu):
 
     Parameters
     ----------
-    a_primary : float
-        Semi-major axis of the primary body.
-    a_secondary : float
-        Semi-major axis of the secondary body.
-    e : float
-        Orbital eccentricity.
-    nu : float
-        True anomaly in radians.
+    a_primary : Semi-major axis of the primary body.
+    a_secondary : Semi-major axis of the secondary body.
+    e : Orbital eccentricity.
+    nu : True anomaly in radians.
 
     Returns
     -------
-    float
-        Distance between the two bodies at true anomaly `nu` in meters.
+    Distance between the two bodies at true anomaly `nu` in meters.
     """
     r1 = com_radius(a_primary, e, nu)
     r2 = com_radius(a_secondary, e, nu)
     
     return np.abs(r1 - r2)
 
-# Convert angular accelerration to linear acceleration
+
 def masyr2_to_kms2(a_masyr2=None, distance_km=distance_km):
     """
     Convert angular acceleration from milliarcseconds per year squared (mas/yr²)
@@ -205,10 +194,8 @@ def masyr2_to_kms2(a_masyr2=None, distance_km=distance_km):
 
     Parameters
     ----------
-    a_masyr2 : 
-        Angular acceleration 
-    distance_km : 
-        Distance to the object in kilometers 
+    a_masyr2 : Angular acceleration 
+    distance_km : Distance to the object in kilometers 
     Returns
     -------
     Quantity
@@ -228,14 +215,13 @@ def masyr2_to_kms2(a_masyr2=None, distance_km=distance_km):
 
     return a_kms2
 
-# Calculate the period of a circular  orbit in seconds
 def circular_period(semi_major, speed):
     """
     Calculate the orbital period in seconds.
     
     Parameters:
-        semi_major (float): semi major axis (kilometers)
-        speed (float): Orbital speed (km/s)
+        semi_major: semi major axis (kilometers)
+        speed: Orbital speed (km/s)
 
     Returns:
          Orbital period (seconds)
@@ -243,26 +229,21 @@ def circular_period(semi_major, speed):
     circ = 2 * np.pi * semi_major
     return circ/speed
 
-# Orbital velocity of orbiting mody using vis-viva equation 
+
 def orbital_speed(a, e, nu, m_primary=m_primary*M_SUN):
     """
     Calculate orbital velocity magnitude at a given true anomaly using the vis-viva equation.
 
     Parameters
     ----------
-    a : float
-        Semi-major axis of orbiting body[m]
-    e : float
-        Orbital eccentricity
-    nu : float
-        True anomaly [radians]
-    m_primary : float
-        Mass of the central body [kg]
+    a : Semi-major axis of orbiting body[m]
+    e : Orbital eccentricity
+    nu : True anomaly [radians]
+    m_primary : Mass of the central body [kg]
 
     Returns
     -------
-    float
-        Orbital velocity [m/s]
+    Orbital velocity [m/s]
     """
     # Gravitational parameter μ = G * M
     mu = const.G * m_primary
@@ -275,7 +256,7 @@ def orbital_speed(a, e, nu, m_primary=m_primary*M_SUN):
 
     return v
 
-# Convert true anomaly to time since periastron (τ)
+
 def true_anomaly_to_time(nu, e, a, m_primary=m_primary*M_SUN):
     """
     Convert true anomaly to time since periastron/periapsis (tau) for a Keplerian orbit.
@@ -283,14 +264,10 @@ def true_anomaly_to_time(nu, e, a, m_primary=m_primary*M_SUN):
 
     Parameters
     ----------
-    nu : float or array-like
-        True anomaly [radians]
-    e : float
-        Orbital eccentricity (0 <= e < 1)
-    a : float
-        Semi-major axis [meters]
-    m_primary : float
-        Mass of the central body [kg], default is solar mass
+    nu : True anomaly [radians]
+    e : Orbital eccentricity (0 <= e < 1)
+    a : Semi-major axis [meters]
+    m_primary : Mass of the central body [kg], default is solar mass
 
     Returns
     -------
@@ -315,4 +292,27 @@ def true_anomaly_to_time(nu, e, a, m_primary=m_primary*M_SUN):
 
     return t
 
+
+def orbital_period_days(semi_major, speed):
+    """
+    Compute the orbital period in days given a semi-major axis and orbital speed.
+
+    Parameters
+    ----------
+    semi_major : Semi-major axis of the orbit (astropy Quantity with units of length, e.g., km).
+    speed : Orbital speed (astropy Quantity with units of velocity, e.g., km/s).
+
+    Returns
+    -------
+    period_days : Orbital period in days (astropy Quantity).
+    """
+    # Ensure input units are correct
+    semi_major = semi_major.to(u.km)
+    speed = speed.to(u.km / u.s)
+    
+    # Period T = 2πa / v for approximate circular orbit
+    period_sec = (2 * np.pi * semi_major / speed).to(u.s)
+    
+    # Convert to days
+    return period_sec.to(u.day)
 
