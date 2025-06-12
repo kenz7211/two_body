@@ -15,7 +15,7 @@ from datetime import datetime
 Constants and Variables
 """
 # Number of time intervals in array
-n_int = 50
+n_int = 1000
 
 # Solar Mass
 M_SUN = const.M_sun.to(u.kg)
@@ -46,6 +46,10 @@ mtot = m_primary
 # apporximately 0.5" at a cluster distance 5.43kpc
 angular_distance_rad = (0.5*u.arcsec).to(u.rad).value
 semi_major_sample = angular_distance_rad*distance_km
+
+#Semi-major axis from Mark Gieles:
+#semi_major_sample = (750*u.au).to(u.km)
+
 
 # semi major axis used in IMBH_av_plots in kilometers
 a_IMBH_av_plots = (0.048*u.pc).to(u.km)
@@ -80,9 +84,6 @@ nu = None
 """
 Variables better  defined in two_body.ipynb
 """
-
-# per_sample is a sample period in s
-# per_sample = circular_period(semi_major = semi_major_sample, speed = v_xyz_sample)
 
 # e is eccentricity
 # 100 random eccentricities from the thermal distribution 
@@ -243,7 +244,7 @@ def orbital_speed(a, e, nu, m_primary=m_primary*M_SUN):
 
     Returns
     -------
-    Orbital velocity [m/s]
+    Orbital speed [m/s]
     """
     # Gravitational parameter μ = G * M
     mu = const.G * m_primary
