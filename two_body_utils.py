@@ -15,7 +15,7 @@ from datetime import datetime
 Constants and Variables
 """
 # Number of time intervals in array
-n_int = 1000
+n_int = 10000
 
 # Solar Mass
 M_SUN = const.M_sun.to(u.kg)
