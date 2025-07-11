@@ -21,7 +21,7 @@ n_int = 10000
 M_SUN = const.M_sun.to(u.kg)
 
 # Masses of orbiting bodies in solar masses
-m_primary = 50
+m_primary = 100
 m_secondary = 1
 
 # Distance to Omega Centauri center (km)
@@ -48,8 +48,12 @@ angular_distance_rad = (0.5*u.arcsec).to(u.rad).value
 semi_major_sample = angular_distance_rad*distance_km
 
 # Other semi-major axis speculations:
-semi_major_sample = (200*u.au).to(u.km)
+#semi_major_sample = (50*u.au).to(u.km)
 
+# Semi Major Axis for two_body_orbits
+# same as semi_major_sample from omega centauri stars above
+angular_distance_rad = (0.5*u.arcsec).to(u.rad).value
+orbit_semi_major = angular_distance_rad*distance_km
 
 # semi major axis used in IMBH_av_plots in kilometers
 a_IMBH_av_plots = (0.048*u.pc).to(u.km)
