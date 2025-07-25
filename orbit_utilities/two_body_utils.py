@@ -21,7 +21,7 @@ n_int = 10000
 M_SUN = const.M_sun.to(u.kg)
 
 # Masses of orbiting bodies in solar masses
-m_primary = 250
+m_primary = 50000
 m_secondary = 1
 
 # Distance to Omega Centauri center (km)
@@ -62,7 +62,7 @@ semi_major_primary = 0*u.km
 # a_secondary is the semi-major axis of M_secondary's orbit in kilometers
 semi_major_secondary = semi_major_sample
 
-# v_xyz_sample is a sample 3D velocity relative to the COM in meters per second
+# v_xyz_sample is a sample 3D velocity relative to the COM in kilometers per second
 # sample uses the two highest velocity omega centauri stars
 # using average proper motion from central mass between the two stars
 # apporximately 100 km/s at a cluster distance 5.43kpc

@@ -38,7 +38,7 @@ import two_body_utils as utils
 # ========== Define StarData Class ==========
 class StarData:
     def __init__(self, name, ra, dec, pm_ra, pm_dec, acc_ra, acc_dec,
-                 sigma_pm_ra, sigma_pm_dec, sigma_acc_ra, sigma_acc_dec):
+                 sigma_pm_ra, sigma_pm_dec, sigma_acc_ra, sigma_acc_dec, v2D, v2D_err):
         self.name = name
         self.ra = ra
         self.dec = dec
@@ -50,8 +50,10 @@ class StarData:
         self.sigma_pm_dec = sigma_pm_dec
         self.sigma_acc_ra = sigma_acc_ra
         self.sigma_acc_dec = sigma_acc_dec
+        self.v2D = v2D
+        self.v2D_err = v2D_err
 
-# ========== Define Center of Mass (Omega Cen) ==========
+# ========== Omega Centauri Data ==========
 # We find the center to be at (α,δ) = (13:26:47.24, −47:28:46.45).
 # from https://iopscience.iop.org/article/10.1088/0004-637X/710/2/1032
 # reference 6 in Haberle et al. (2024; Nature, Vol. 631) 
@@ -59,23 +61,35 @@ class StarData:
 ra_cm_mas  = (201.696834 * u.deg).to(u.mas).value
 dec_cm_mas = (-47.479569 * u.deg).to(u.mas).value
 
+# Distance to Omega Centauri center (km)
+distance_kpc = 5.43 * u.kpc
+distance_km= distance_kpc.to(u.km)
+
+# Assumed errors in position
+ra_err = 0.5*u.mas
+dec_err = 0.5*u.mas
+
 # ========== Define Error Propagation Function ==========
-def propagate_error(sigma_pm, sigma_acc, dt):
+def propagate_error(sigma_pos, sigma_pm, sigma_acc, dt):
     """
     Propagates uncertainty in position due to uncertainties in
     proper motion and acceleration over time. No uncertainty in initial position is available.
 
     Parameters:
-    - sigma_pm Uncertainty in proper motion (mas/yr)
+    - sigma_pos : Initial uncertainty in position (mas)
+    - sigma_pm  : Uncertainty in proper motion (mas/yr)
     - sigma_acc : Uncertainty in acceleration (mas/yr²)
-    - dt : Time from reference epoch (in years)
+    - dt        : Time from reference epoch (in years)
 
     Returns:
-    - sigma_pos : Uncertainty in predicted position at time dt (in mas)
+    - sigma_pos : Total uncertainty in predicted position at time dt (mas)
     """
-    term_mu = (dt * sigma_pm) ** 2
-    term_acc = (0.5 * dt**2 * sigma_acc) ** 2
-    return np.sqrt(term_mu + term_acc)
+    term_pos = sigma_pos**2                      # variance from initial position
+    term_pm = (dt * sigma_pm) ** 2               # variance from proper motion
+    term_acc = (0.5 * dt**2 * sigma_acc) ** 2    # variance from acceleration
+
+    sigma_pos_total = np.sqrt(term_pos + term_pm + term_acc)
+    return sigma_pos_total
 
 # ========== Define Position Projection Function ==========
 def fake_pos(pos, pm, acc, dt):
@@ -106,7 +120,9 @@ stars = {
         sigma_pm_ra=0.038, # mas/year
         sigma_pm_dec=0.055, # mas/year
         sigma_acc_ra=0.0083, # mas/year^2
-        sigma_acc_dec=0.0098 # mas/year^2
+        sigma_acc_dec=0.0098, # mas/year^2
+        v2D=113.0,         # km/s
+        v2D_err=1.1        # km/s
     ),
     "B": StarData(
         name="B",
@@ -119,8 +135,10 @@ stars = {
         sigma_pm_ra=0.182, # mas/year
         sigma_pm_dec=0.081, # mas/year
         sigma_acc_ra=0.0239, # mas/year^2
-        sigma_acc_dec=0.0157 # mas/year^2
-  ),
+        sigma_acc_dec=0.0157, # mas/year^2
+        v2D=66.6,
+        v2D_err=4.1
+    ),
 
     "C": StarData(
         name="C",
@@ -133,7 +151,9 @@ stars = {
         sigma_pm_ra=0.127 , # mas/year
         sigma_pm_dec=0.056 , # mas/year
         sigma_acc_ra=0.0333, # mas/year^2
-        sigma_acc_dec=0.0123 # mas/year^2
+        sigma_acc_dec=0.0123, # mas/year^2
+        v2D=94.9,
+        v2D_err=1.7
     ),
 
     "D": StarData(
@@ -147,7 +167,9 @@ stars = {
         sigma_pm_ra=0.082, # mas/year
         sigma_pm_dec=0.061 , # mas/year
         sigma_acc_ra=0.0177, # mas/year^2
-        sigma_acc_dec=0.0162 # mas/year^2
+        sigma_acc_dec=0.0162, # mas/year^2
+        v2D=77.9,
+        v2D_err=2.0
     ),
 
     "E": StarData(
@@ -161,7 +183,9 @@ stars = {
         sigma_pm_ra=0.025, # mas/year
         sigma_pm_dec=0.037, # mas/year
         sigma_acc_ra=0.0042, # mas/year^2
-        sigma_acc_dec=0.0075 # mas/year^2
+        sigma_acc_dec=0.0075, # mas/year^2
+        v2D=69.6,
+        v2D_err=0.8
     ),
 
     "F": StarData(
@@ -175,7 +199,9 @@ stars = {
         sigma_pm_ra=0.017, # mas/year
         sigma_pm_dec=0.016, # mas/year
         sigma_acc_ra=0.0038, # mas/year^2
-        sigma_acc_dec=0.0038 # mas/year^2
+        sigma_acc_dec=0.0038, # mas/year^2
+        v2D=67.4,
+        v2D_err=0.4
     ),
 
     "G": StarData(
@@ -189,10 +215,12 @@ stars = {
         sigma_pm_ra=0.098, # mas/year
         sigma_pm_dec=0.062, # mas/year
         sigma_acc_ra=0.0267, # mas/year^2
-        sigma_acc_dec=0.0170 # mas/year^2
+        sigma_acc_dec=0.0170, # mas/year^2
+        v2D=66.2,
+        v2D_err=1.9
     ),
 
- }
+        }
 # ========== Astrometry Imput for Octofitter ==========
 def simulate_astrometry(star, epoch, dt):
     """
@@ -225,10 +253,10 @@ def simulate_astrometry(star, epoch, dt):
 
     # --- Propagate errors for simulated data points ---
     # Compute uncertainty in RA/Dec at past and future epochs using PM and acceleration errors
-    future_ra_err = propagate_error(star.sigma_pm_ra, star.sigma_acc_ra, dt)
-    future_dec_err = propagate_error(star.sigma_pm_dec, star.sigma_acc_dec, dt)
-    past_ra_err = propagate_error(star.sigma_pm_ra, star.sigma_acc_ra, -dt)
-    past_dec_err = propagate_error(star.sigma_pm_dec, star.sigma_acc_dec, -dt)
+    future_ra_err = propagate_error(ra_err.value, star.sigma_pm_ra, star.sigma_acc_ra, dt)
+    future_dec_err = propagate_error(dec_err.value, star.sigma_pm_dec, star.sigma_acc_dec, dt)
+    past_ra_err = propagate_error(ra_err.value, star.sigma_pm_ra, star.sigma_acc_ra, -dt)
+    past_dec_err = propagate_error(dec_err.value, star.sigma_pm_dec, star.sigma_acc_dec, -dt)
 
     # --- Relative positions ---
     # Combine past, present, and future positions into arrays
@@ -238,82 +266,57 @@ def simulate_astrometry(star, epoch, dt):
     ra_rel = ra_vals - ra_cm_mas
     dec_rel = dec_vals - dec_cm_mas
     # Set measurement errors (central epoch is assumed to be exact here with error ~1e-6)
-    ra_errs = [past_ra_err, 1e-6, future_ra_err]
-    dec_errs = [past_dec_err, 1e-6, future_dec_err]
+    ra_errs = [past_ra_err, ra_err.value, future_ra_err]
+    dec_errs = [past_dec_err, dec_err.value, future_dec_err]
 
     return epochs_mjd, ra_rel, dec_rel, ra_errs, dec_errs
 
 
-
-"""
-Observed 2D Velocities and Accelerations 
-----------------------------------------
-Observational data for 7 high-velocity stars in Omega Centauri
-Calculations of plane-of-sky accelerations and propagation of uncertainties
-"""
-
 # ========================================================
-# 1. Input: Measured Proper Motion Velocities (v2D)
+#  Total Angular Accelerations and Uncertainty 
 # ========================================================
 
-# 2D velocities in the plane of the sky [km/s]
-# Sources A–G
-v2D = np.array([113.0, 66.6, 94.9, 77.9, 69.6, 67.4, 66.2]) * u.km / u.s
+def total_accelerations(star):
+    """
+    Compute total plane-of-sky angular and physical acceleration
+    (and their uncertainties) for a given star.
 
-# Corresponding 1σ uncertainties [km/s]
-v2D_err = np.array([1.1, 4.1, 1.7, 2.0, 0.8, 0.4, 1.9]) * u.km / u.s
+    Parameters
+    ----------
+    star : StarData
+        A star object with acc_ra, acc_dec, sigma_acc_ra, and sigma_acc_dec attributes.
 
-# ========================================================
-# 2. Input: Angular Accelerations from Astrometry (RA/Dec)
-# ========================================================
+    Returns
+    -------
+    a_total_masyr2 : float
+        Total angular acceleration in mas/yr².
+    a_total_masyr2_err : float
+        Uncertainty in total angular acceleration.
+    a_total_kms2 : float
+        Total physical acceleration in km/s².
+    a_total_kms2_err : float
+        Uncertainty in physical acceleration.
+    """
+    a_ra = star.acc_ra
+    a_dec = star.acc_dec
+    a_ra_err = star.sigma_acc_ra
+    a_dec_err = star.sigma_acc_dec
 
-# Accelerations in Right Ascension [mas/yr²]
-a_ra = np.array([-0.0069, 0.0702, 0.0028, 0.0357, 0.0072, 0.0052, -0.0197]) * u.mas / u.yr**2
-a_ra_err = np.array([0.0083, 0.0239, 0.0333, 0.0177, 0.0042, 0.0038, 0.0267]) * u.mas / u.yr**2
+    # Angular acceleration magnitude
+    a_total_masyr2 = np.sqrt(a_ra**2 + a_dec**2)
 
-# Accelerations in Declination [mas/yr²]
-a_dec = np.array([0.0085, 0.0228, -0.0060, -0.0194, -0.0009, -0.0015, 0.0173]) * u.mas / u.yr**2
-a_dec_err = np.array([0.0098, 0.0157, 0.0123, 0.0162, 0.0075, 0.0038, 0.0170]) * u.mas / u.yr**2
+    # Uncertainty propagation
+    a_total_masyr2_err = np.sqrt(
+        (a_ra * a_ra_err / a_total_masyr2)**2 +
+        (a_dec * a_dec_err / a_total_masyr2)**2
+    )
 
-# ========================================================
-# 3. Total Angular Acceleration and Uncertainty (Plane-of-Sky)
-# ========================================================
+    # Convert to physical acceleration [km/s²]
+    a_total_kms2 = utils.masyr2_to_kms2(a_total_masyr2, distance_km=distance_km)
+    a_total_kms2_err = utils.masyr2_to_kms2(a_total_masyr2_err, distance_km=distance_km)
 
-# Total angular acceleration [mas/yr²]
-a_total_masyr2 = np.sqrt(a_ra**2 + a_dec**2)
+    return a_total_masyr2, a_total_masyr2_err, a_total_kms2, a_total_kms2_err
 
-# Propagate uncertainty using partial derivatives
-a_total_masyr2_err = np.sqrt(
-    (a_ra * a_ra_err / a_total_masyr2)**2 +
-    (a_dec * a_dec_err / a_total_masyr2)**2
-)
-
-# ========================================================
-# 4. Conversion to Physical Acceleration [km/s²]
-# ========================================================
-
-# Convert angular acceleration to physical acceleration using cluster distance
-a_total = utils.masyr2_to_kms2(a_masyr2=a_total_masyr2, distance_km=utils.distance_km)
-a_total_err = utils.masyr2_to_kms2(a_masyr2=a_total_masyr2_err, distance_km=utils.distance_km)
-
-# ========================================================
-# 5. Create Summary Data Table
-# ========================================================
-
-# Build astropy table of all values
-star_data = Table({
-    "v2D": v2D,
-    "v2D_err": v2D_err,
-    "a_ra": a_ra,
-    "a_ra_err": a_ra_err,
-    "a_dec": a_dec,
-    "a_dec_err": a_dec_err,
-    "a_total": a_total,
-    "a_total_err": a_total_err,
-})
-
-# Final table 
-# print(star_data)
 
 
 
